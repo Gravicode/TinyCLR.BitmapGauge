@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Diagnostics;
 using System.Drawing;
 using System.Text;
 using System.Threading;
@@ -18,7 +19,7 @@ namespace TinyCLR.BitmapGauge
         private float recommendedValue = 25;
         private int noOfDivisions = 10;
         private int noOfSubDivisions = 3;
-        private string dialText;
+        private string dialText=String.Empty;
         private Color ForeColor = Color.Black;
         private Color dialColor = Color.FromArgb(230, 230, 250);
         private float glossinessAlpha = 72;//25;
@@ -53,7 +54,7 @@ namespace TinyCLR.BitmapGauge
             //this.SetStyle(ControlStyles.AllPaintingInWmPaint, true);
             //this.SetStyle(ControlStyles.UserPaint, true);
             //this.SetStyle(ControlStyles.OptimizedDoubleBuffer, true);
-            this.BackColor = Color.Transparent;
+            //this.BackColor = Color.White;
             //this.Resize += new EventHandler(AquaGauge_Resize);
             this.requiresRedraw = true;
             Resize();
@@ -263,8 +264,11 @@ namespace TinyCLR.BitmapGauge
             width = this.Width - x * 2;
             height = this.Height - y * 2;
             var gfx = Graphics.FromImage(bmp);
+            gfx.Clear();
+
             PaintBackground(gfx);
             DrawPointer(gfx, ((width) / 2) + x, ((height) / 2) + y);
+            gfx.Flush();
             return bmp;
         }
 
@@ -274,33 +278,29 @@ namespace TinyCLR.BitmapGauge
         /// <param name="e"></param>
         protected void PaintBackground(Graphics gfx)
         {
-            if (!enableTransparentBackground)
-            {
-                //base.OnPaintBackground(e);
-            }
-
-            //e.Graphics.SmoothingMode = SmoothingMode.HighQuality;
-            gfx.FillRectangle(new SolidBrush(Color.Transparent), 0, 0, Width, Height);
+            
+            gfx.FillRectangle(new SolidBrush(BackColor), 0, 0, Width, Height);
             if (backgroundImg == null || requiresRedraw)
             {
                 backgroundImg = new Bitmap(this.Width, this.Height);
                 Graphics g = Graphics.FromImage(backgroundImg);
+                g.FillRectangle(new SolidBrush(BackColor), 0, 0, Width, Height);
                 //g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
                 width = this.Width - x * 2;
                 height = this.Height - y * 2;
                 rectImg = new Rectangle(x, y, width, height);
 
                 //Draw background color
-                Brush backGroundBrush = new SolidBrush(Color.FromArgb(120, dialColor));
+                Brush backGroundBrush = new SolidBrush(dialColor);//new SolidBrush(Color.FromArgb(120, dialColor));
                 if (enableTransparentBackground)
                 {
                     float gg = width / 60;
-                    //g.FillEllipse(new SolidBrush(this.Parent.BackColor), -gg, -gg, this.Width+gg*2, this.Height+gg*2);
+                    g.FillEllipse(new SolidBrush(this.BackColor), (int)-gg,(int) -gg, (int)(this.Width+gg*2), (int)(this.Height+gg*2));
                 }
                 g.FillEllipse(backGroundBrush, x, y, width, height);
 
                 //Draw Rim
-                SolidBrush outlineBrush = new SolidBrush(Color.FromArgb(100, Color.FromArgb(112, 128, 144)));//gray
+                SolidBrush outlineBrush = new SolidBrush( Color.FromArgb(112, 128, 144));//gray
                 Pen outline = new Pen(outlineBrush, (float)(width * .03));
                 g.DrawEllipse(outline, rectImg.X, rectImg.Y, rectImg.Width, rectImg.Height);
                 Pen darkRim = new Pen(Color.FromArgb(112, 128, 144));//gray
@@ -310,14 +310,15 @@ namespace TinyCLR.BitmapGauge
                 DrawCalibration(g, rectImg, ((width) / 2) + x, ((height) / 2) + y);
 
                 //Draw Colored Rim
-                Pen colorPen = new Pen(Color.FromArgb(190, Color.FromArgb(220, 220, 220)), this.Width / 40);
-                Pen blackPen = new Pen(Color.FromArgb(250, Color.Black), this.Width / 200);
+                Pen colorPen = new Pen( Color.FromArgb(220, 220, 220), this.Width / 40);//new Pen(Color.FromArgb(190, Color.FromArgb(220, 220, 220)), this.Width / 40);
+                Pen blackPen = new Pen( Color.Black, this.Width / 200);//new Pen(Color.FromArgb(250, Color.Black), this.Width / 200);
                 int gap = (int)(this.Width * 0.03F);
                 Rectangle rectg = new Rectangle(rectImg.X + gap, rectImg.Y + gap, rectImg.Width - gap * 2, rectImg.Height - gap * 2);
                 DrawArc(g, colorPen, rectg, 135, 270);
 
                 //Draw Threshold
-                colorPen = new Pen(Color.FromArgb(200, Color.FromArgb(124, 252, 0)), this.Width / 50);
+                colorPen = new Pen(Color.FromArgb(124, 252, 0), this.Width / 50);
+                //colorPen = new Pen(Color.FromArgb(200, Color.FromArgb(124, 252, 0)), this.Width / 50);
                 rectg = new Rectangle(rectImg.X + gap, rectImg.Y + gap, rectImg.Width - gap * 2, rectImg.Height - gap * 2);
                 float val = MaxValue - MinValue;
                 val = (100 * (this.recommendedValue - MinValue)) / val;
@@ -332,9 +333,11 @@ namespace TinyCLR.BitmapGauge
                 //Draw Digital Value
                 Rectangle digiRect = new Rectangle((int)(this.Width / 2F - (int)this.width / 5F), (int)(this.height / 1.2F), (int)(this.width / 2.5F), (int)(this.Height / 9F));
                 Rectangle digiFRect = new Rectangle((int)(this.Width / 2 - this.width / 7), (int)(this.height / 1.18), (int)(this.width / 4), (int)(this.Height / 12));
-                g.FillRectangle(new SolidBrush(Color.FromArgb(30, Color.Gray)), digiRect.X, digiRect.Y, digiRect.Width, digiRect.Height);
+                g.FillRectangle(new SolidBrush(Color.Gray), digiRect.X, digiRect.Y, digiRect.Width, digiRect.Height);
+                //g.FillRectangle(new SolidBrush(Color.FromArgb(30, Color.Gray)), digiRect.X, digiRect.Y, digiRect.Width, digiRect.Height);
                 DisplayNumber(g, this.currentValue, digiFRect);
 
+                
                 SizeF textSize = g.MeasureString(this.dialText, this.font);
                 RectangleF digiFRectText = new RectangleF(this.Width / 2 - textSize.Width / 2, (int)(this.height / 1.5), textSize.Width, textSize.Height);
                 g.DrawString(dialText, this.font, new SolidBrush(this.ForeColor), digiFRectText);
@@ -368,13 +371,13 @@ namespace TinyCLR.BitmapGauge
         /// <param name="gr"></param>
         /// <param name="cx"></param>
         /// <param name="cy"></param>
-        private void DrawPointer(Graphics gr, int cx, int cy)
+        private void DrawPointer(Graphics g, int cx, int cy)
         {
             float radius = this.Width / 2 - (this.Width * .12F);
             float val = MaxValue - MinValue;
 
-            Image img = new Bitmap(this.Width, this.Height);
-            Graphics g = Graphics.FromImage(img);
+            //Image img = new Bitmap(this.Width, this.Height);
+            //Graphics g = Graphics.FromImage(img);
             //g.SmoothingMode = SmoothingMode.AntiAlias;
 
             val = (100 * (this.currentValue - MinValue)) / val;
@@ -426,7 +429,7 @@ namespace TinyCLR.BitmapGauge
 
             //DrawGloss(g);
 
-            gr.DrawImage(img, 0, 0);
+            //gr.DrawImage(img, 0, 0);
         }
         void FillPolygon(Graphics g, Brush brush, PointF[] Points)
         {
@@ -489,7 +492,7 @@ namespace TinyCLR.BitmapGauge
         {
             float shift = Width / 5;
             RectangleF rectangle = new RectangleF(cX - (shift / 2), cY - (shift / 2), shift, shift);
-            var brush = new SolidBrush(Color.FromArgb(100, this.dialColor)); //LinearGradientBrush(rect, Color.Black, Color.FromArgb(100, this.dialColor), LinearGradientMode.Vertical);
+            var brush = new SolidBrush( this.dialColor); //LinearGradientBrush(rect, Color.Black, Color.FromArgb(100, this.dialColor), LinearGradientMode.Vertical);
             g.FillEllipse(brush, (int)rectangle.X, (int)rectangle.Y, (int)rectangle.Width, (int)rectangle.Height);
 
             shift = Width / 7;
@@ -579,7 +582,7 @@ namespace TinyCLR.BitmapGauge
         {
             try
             {
-                string num = number.ToString("000.00");
+                string num = number.ToString("n0");
                 num.PadLeft(3, '0');
                 float shift = 0;
                 if (number < 0)
@@ -613,8 +616,9 @@ namespace TinyCLR.BitmapGauge
                     }
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Debug.WriteLine(ex.Message);
             }
         }
 
@@ -631,7 +635,7 @@ namespace TinyCLR.BitmapGauge
             float width;
             width = 10F * height / 13;
 
-            Pen outline = new Pen(Color.FromArgb(40, this.dialColor));
+            Pen outline = new Pen(this.dialColor);//new Pen(Color.FromArgb(40, this.dialColor));
             Pen fillPen = new Pen(Color.Black);
 
             #region Form Polygon Points

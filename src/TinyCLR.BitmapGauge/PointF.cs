@@ -5,7 +5,7 @@ using System.Threading;
 
 namespace TinyCLR.BitmapGauge
 {
-    public class PointF
+    public struct PointF
     {
         public PointF(float ax, float ay)
         {

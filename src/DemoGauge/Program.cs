@@ -15,7 +15,8 @@ namespace DemoGauge
     {
         static void Main()
         {
-            var gauge = new BitmapGauge(400, 400);
+
+            
             GpioPin backlight = GpioController.GetDefault().OpenPin(SC20260.GpioPin.PA15);
             backlight.SetDriveMode(GpioPinDriveMode.Output);
             backlight.Write(GpioPinValue.High);
@@ -50,6 +51,9 @@ namespace DemoGauge
 
 
             var screen = Graphics.FromHdc(displayController.Hdc);
+
+            var gauge = new BitmapGauge(400, 400);
+
             Random random = new Random();
             Bitmap bmp;
             var counter = 0;
@@ -59,18 +63,14 @@ namespace DemoGauge
                 gauge.ThresholdPercent = 50;
                 bmp = gauge.GetGauge();
                 screen.Clear();
-                //draw first chart - line
                 screen.DrawImage(bmp, 0, 0);
 
                 screen.Flush();
                 counter++;
-                if (counter > 0) counter = 1;
-                Thread.Sleep(500);
+                if (counter > 100) counter = 1;
+                Thread.Sleep(1000);
             }
-
-            //Thread.Sleep(-1);
-
-            //bmp.Save(Directory.GetCurrentDirectory() + "\\gauge.jpg");
+            
         }
     }
 }
